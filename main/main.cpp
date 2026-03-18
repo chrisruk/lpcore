@@ -17,7 +17,7 @@
 
 extern "C" void app_main(void)
 {
-    uint32_t *z = (uint32_t *)(0x50004000 - 10);
+    uint32_t *z = (uint32_t *)(0x50004000 - sizeof(uint32_t));
     while (1)
     {
         printf("Waiting %ld\n", *z);
