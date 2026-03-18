@@ -8,7 +8,7 @@
 
 int main (void)
 {
-    uint32_t *z = (uint32_t*)(0x50004000 - sizeof(uint32_t));
+    uint32_t *z = (uint32_t*)(0x50004000 - (sizeof(uint32_t) * 30));
     *z=0;
 
     while (1) {

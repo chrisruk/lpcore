@@ -38,6 +38,8 @@
 #include "hal/clk_tree_ll.h"
 #include "hal/lp_core_ll.h"
 
+#include "bootloader_flash_priv.h"
+
 #include "esp_rom_crc.h"
 
 #if CONFIG_IDF_TARGET_ESP32P4 || CONFIG_IDF_TARGET_ESP32C5
@@ -54,7 +56,7 @@
 #define SOC_LP_TIMER_SUPPORTED          1
 #define CONFIG_ULP_NORESET_UNDER_DEBUG 1
 #define WAKEUP_SOURCE_MAX_NUMBER 6
-#define CONFIG_ULP_COPROC_RESERVE_MEM 16344
+#define CONFIG_ULP_COPROC_RESERVE_MEM 16348
 #define ALIGN_DOWN(SIZE, AL)   (SIZE & ~(AL - 1))
 
 #define ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU    BIT(0) // Started by HP core (1 single wakeup)
@@ -287,22 +289,21 @@ esp_err_t ulp_lp_core_load_binary()
     uint32_t* base = RTC_SLOW_MEM;
 #endif
 
-    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, "lpcore");
-    hal_memset(base, 0, 16344 /*CONFIG_ULP_COPROC_RESERVE_MEM*/);
-    if (partition != NULL) {
-        ESP_LOGE(TAG, "Partition Address: 0x%06x\n", partition->address);
-        ESP_LOGE(TAG, "Partition Size: 0x%06x\n", partition->size);
-        esp_partition_read(partition, 0, base, /*CONFIG_ULP_COPROC_RESERVE_MEM*/ 16344);
-
-        // 1. Initial CRC value (usually 0xFFFFFFFF or 0x00000000)
-        uint32_t init_crc = 0xFFFFFFFF;
-
-        // 2. Calculate CRC32 (Little Endian)
-        // The ROM function calculates it directly
-        uint32_t crc32 = esp_rom_crc32_le(init_crc, (uint8_t*)base, CONFIG_ULP_COPROC_RESERVE_MEM);
-
-        ESP_LOGE(TAG, "CRC: 0x%06x\n", crc32);
+    hal_memset(base, 0, CONFIG_ULP_COPROC_RESERVE_MEM);
+    esp_err_t err = bootloader_flash_read(0x3C0000, base, CONFIG_ULP_COPROC_RESERVE_MEM, false);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to load\n");
+    } else {
+        ESP_LOGE(TAG, "Loaded\n");
     }
+
+    // 1. Initial CRC value (usually 0xFFFFFFFF or 0x00000000)
+    //uint32_t init_crc = 0xFFFFFFFF;
+
+    // 2. Calculate CRC32 (Little Endian)
+    // The ROM function calculates it directly
+    //uint32_t crc32 = esp_rom_crc32_le(init_crc, (uint8_t*)base, 16344);
+    //ESP_LOGE(TAG, "CRC: 0x%06x\n", crc32);
 
     return ESP_OK;
 }
