@@ -38,6 +38,9 @@
 #include "hal/clk_tree_ll.h"
 #include "hal/lp_core_ll.h"
 
+#include <soc/lp_apm_reg.h>
+#include <soc/lp_apm0_reg.h>
+
 #include "bootloader_flash_priv.h"
 
 #include "esp_rom_crc.h"
@@ -355,6 +358,9 @@ void __attribute__((noreturn)) call_start_cpu0(void)
         .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
         .lp_timer_sleep_duration_us = 0,
     };
+
+    REG_WRITE(LP_APM0_FUNC_CTRL_REG, false ? UINT32_MAX : 0);
+    REG_WRITE(LP_APM_FUNC_CTRL_REG, false ? UINT32_MAX : 0);
 
     ReturnCode = ulp_lp_core_run(&cfg);
     if(ReturnCode != ESP_OK)
